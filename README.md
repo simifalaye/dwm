@@ -19,17 +19,27 @@ necessary as root):
 Patches
 --------
 _All patches are added via branches. Source: [here](https://dwm.suckless.org/patches/)_
-- bottomstack
-- noborder
-- pertag
-- restartsig
-- statusallmons
-- titlecolor
+- [bottomstack](https://dwm.suckless.org/patches/bottomstack)
+- [mastermonitor](https://github.com/flaport/dwm/commit/55a46c0f808d01b0450eed748e49bfa9d278e317)
+    - The master monitor is the only monitor with tags. All other monitors will
+    have no tags.  The tags from the master can be accessed
+    (enabled/disabled/send to) with the normal keybindings from any monitor.
+    This makes the tag system a lot less confusing in a multi monitor setup.
+    - This patch has been modified for my personal use
+        - Removed Ctrl-n/Ctrl-Shift-n bindings for switching to monitor
+        - Added statusallmons patch to display status bar on all monitors
+- [noborder](https://dwm.suckless.org/patches/noborder/)
+- [restartsig](https://dwm.suckless.org/patches/restartsig/)
+- [tilegap](https://dwm.suckless.org/patches/tilegap/)
+- [titlecolor](https://dwm.suckless.org/patches/titlecolor/)
 
 **Patching guide**
 refer to [here](https://github.com/qguv/dwm) for an example
+- Reset develop branch:
+    - `rm -rf config.h && sudo make clean`
+    - `git reset --hard origin/develop`
 - Add a patch:
-    - branch off of develop
+    - branch off of clean develop branch
     - apply patch
     - move all config.def.h changes to config branch
     - commit branch `git commit -m <branchname>`
@@ -43,6 +53,7 @@ refer to [here](https://github.com/qguv/dwm) for an example
         `rm -rf config.h && sudo make clean`
     - Merge all branches
         `git merge <branchname> m <branchname>`
+- Build
 
 Running dwm
 -----------
