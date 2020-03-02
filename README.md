@@ -19,6 +19,7 @@ necessary as root):
 Patches
 --------
 _All patches are added via branches. Source: [here](https://dwm.suckless.org/patches/)_
+- [attachaside](https://dwm.suckless.org/patches/attachaside/)
 - [bottomstack](https://dwm.suckless.org/patches/bottomstack)
 - [mastermonitor](https://github.com/flaport/dwm/commit/55a46c0f808d01b0450eed748e49bfa9d278e317)
     - The master monitor is the only monitor with tags. All other monitors will
