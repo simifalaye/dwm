@@ -33,6 +33,7 @@ _All patches are added via branches. Source: [here](https://dwm.suckless.org/pat
 - [restartsig](https://dwm.suckless.org/patches/restartsig/)
 - [tilegap](https://dwm.suckless.org/patches/tilegap/)
 - [titlecolor](https://dwm.suckless.org/patches/titlecolor/)
+- [warp](https://dwm.suckless.org/patches/warp/)
 
 **Patching guide**
 refer to [here](https://github.com/qguv/dwm) for an example
