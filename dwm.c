@@ -156,7 +156,6 @@ static void clientmessage(XEvent *e);
 static void configure(Client *c);
 static void configurenotify(XEvent *e);
 static void configurerequest(XEvent *e);
-static Monitor *createmon(void);
 static void destroynotify(XEvent *e);
 static void detach(Client *c);
 static void detachstack(Client *c);
@@ -235,6 +234,7 @@ static int xerrorstart(Display *dpy, XErrorEvent *ee);
 static void zoom(const Arg *arg);
 
 /* variables */
+static const unsigned int MASTERMON;
 static const char broken[] = "broken";
 static char stext[256];
 static int screen;
@@ -265,7 +265,7 @@ static Cur *cursor[CurLast];
 static Clr **scheme;
 static Display *dpy;
 static Drw *drw;
-static Monitor *mons, *selmon;
+static Monitor *mons, *selmon, *mastermon;
 static Window root, wmcheckwin;
 
 /* configuration, allows nested code to access above variables */
@@ -702,7 +702,7 @@ drawbar(Monitor *m)
 	Client *c;
 
 	/* draw status first so it can be overdrawn by tags later */
-	if (m == selmon) { /* status is only drawn on selected monitor */
+	if (m == selmon || 1) { /* status is only drawn on selected monitor */
 		drw_setscheme(drw, scheme[SchemeNorm]);
 		sw = TEXTW(stext) - lrpad + 2; /* 2px right padding */
 		drw_text(drw, m->ww - sw, 0, sw, bh, 0, stext, 0);
@@ -714,6 +714,8 @@ drawbar(Monitor *m)
 			urg |= c->tags;
 	}
 	x = 0;
+
+    if (m == mastermon){
 	for (i = 0; i < LENGTH(tags); i++) {
 		w = TEXTW(tags[i]);
 		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
@@ -724,6 +726,7 @@ drawbar(Monitor *m)
 				urg & 1 << i);
 		x += w;
 	}
+    }
 	w = blw = TEXTW(m->ltsymbol);
 	drw_setscheme(drw, scheme[SchemeNorm]);
 	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
@@ -1655,11 +1658,29 @@ spawn(const Arg *arg)
 void
 tag(const Arg *arg)
 {
-	if (selmon->sel && arg->ui & TAGMASK) {
-		selmon->sel->tags = arg->ui & TAGMASK;
-		focus(NULL);
-		arrange(selmon);
-	}
+    if (!selmon->sel || !(arg->ui & TAGMASK)){
+        return;
+    }
+
+    if (selmon != mastermon){
+        Client *c = selmon->sel;
+        unfocus(c, 1);
+        detach(c);
+        detachstack(c);
+        c->mon = mastermon;
+        c->tags = arg->ui & TAGMASK;
+        attach(c);
+        attachstack(c);
+        focus(NULL);
+        arrange(NULL);
+        return;
+    }
+
+    if (selmon->sel && arg->ui & TAGMASK) {
+        selmon->sel->tags = arg->ui & TAGMASK;
+        focus(NULL);
+        arrange(selmon);
+    }
 }
 
 void
@@ -1719,25 +1740,51 @@ togglefloating(const Arg *arg)
 	arrange(selmon);
 }
 
+
 void
 toggletag(const Arg *arg)
 {
 	unsigned int newtags;
+    if (!selmon->sel)
+        return;
+    newtags = selmon->sel->tags ^ (arg->ui & TAGMASK);
+    if (!newtags)
+        return;
 
-	if (!selmon->sel)
-		return;
-	newtags = selmon->sel->tags ^ (arg->ui & TAGMASK);
-	if (newtags) {
-		selmon->sel->tags = newtags;
-		focus(NULL);
-		arrange(selmon);
-	}
+    if (selmon != mastermon){
+        Client *c = selmon->sel;
+        unfocus(c, 1);
+        detach(c);
+        detachstack(c);
+        c->mon = mastermon;
+        c->tags = arg->ui & TAGMASK;
+        attach(c);
+        attachstack(c);
+        focus(NULL);
+        arrange(NULL);
+        return;
+    }
+
+    if (selmon != mastermon)
+        return;
+
+    if (newtags) {
+        selmon->sel->tags = newtags;
+        focus(NULL);
+        arrange(selmon);
+    }
 }
 
 void
 toggleview(const Arg *arg)
 {
-	unsigned int newtagset = selmon->tagset[selmon->seltags] ^ (arg->ui & TAGMASK);
+	unsigned int newtagset;
+
+    if (selmon != mastermon){
+        selmon = mastermon;
+    }
+
+    newtagset = selmon->tagset[selmon->seltags] ^ (arg->ui & TAGMASK);
 
 	if (newtagset) {
 		selmon->tagset[selmon->seltags] = newtagset;
@@ -1857,6 +1904,7 @@ updategeom(void)
 		int i, j, n, nn;
 		Client *c;
 		Monitor *m;
+        unsigned int mastermonnum;
 		XineramaScreenInfo *info = XineramaQueryScreens(dpy, &nn);
 		XineramaScreenInfo *unique = NULL;
 
@@ -1868,6 +1916,7 @@ updategeom(void)
 				memcpy(&unique[j++], &info[i], sizeof(XineramaScreenInfo));
 		XFree(info);
 		nn = j;
+		mastermonnum = (MASTERMON - 1)%nn;
 		if (n <= nn) { /* new monitors available */
 			for (i = 0; i < (nn - n); i++) {
 				for (m = mons; m && m->next; m = m->next);
@@ -1888,6 +1937,9 @@ updategeom(void)
 					m->mw = m->ww = unique[i].width;
 					m->mh = m->wh = unique[i].height;
 					updatebarpos(m);
+                    if (i == mastermonnum){
+                        mastermon = m;
+                    }
 				}
 		} else { /* less monitors available nn < n */
 			for (i = nn; i < n; i++) {
@@ -1987,9 +2039,11 @@ updatesizehints(Client *c)
 void
 updatestatus(void)
 {
+	Monitor* m;
 	if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
 		strcpy(stext, "dwm-"VERSION);
-	drawbar(selmon);
+	for(m = mons; m; m = m->next)
+		drawbar(m);
 }
 
 void
@@ -2035,8 +2089,11 @@ updatewmhints(Client *c)
 void
 view(const Arg *arg)
 {
-	if ((arg->ui & TAGMASK) == selmon->tagset[selmon->seltags])
+	if (selmon == mastermon && ((arg->ui & TAGMASK) == selmon->tagset[selmon->seltags]))
 		return;
+    if (selmon != mastermon){
+        selmon = mastermon;
+    }
 	selmon->seltags ^= 1; /* toggle sel tagset */
 	if (arg->ui & TAGMASK)
 		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
