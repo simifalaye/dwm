@@ -19,7 +19,6 @@ necessary as root):
 Patches
 --------
 _All patches are added via branches. Source: [here](https://dwm.suckless.org/patches/)_
-- [attachaside](https://dwm.suckless.org/patches/attachaside/)
 - [deck](https://dwm.suckless.org/patches/deck/)
 - [mastermonitor](https://github.com/flaport/dwm/commit/55a46c0f808d01b0450eed748e49bfa9d278e317)
     - The master monitor is the only monitor with tags. All other monitors will
@@ -32,7 +31,6 @@ _All patches are added via branches. Source: [here](https://dwm.suckless.org/pat
 - [noborder](https://dwm.suckless.org/patches/noborder/)
 - [restartsig](https://dwm.suckless.org/patches/restartsig/)
 - [tilegap](https://dwm.suckless.org/patches/tilegap/)
-- [titlecolor](https://dwm.suckless.org/patches/titlecolor/)
 - [warp](https://dwm.suckless.org/patches/warp/)
 
 **Patching guide**
