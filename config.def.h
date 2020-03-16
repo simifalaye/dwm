@@ -9,8 +9,8 @@ static const unsigned int gappx     = 6;        /* gap pixel between windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "MesloLGS NF:size=10" };
-static const char dmenufont[]       = "MesloLGS NF:size=10";
+static const char *fonts[]          = { "Iosevka:size=11" };
+static const char dmenufont[]       = "Iosevka:size=11";
 static const char col_gray1[]       = "#282828";
 static const char col_gray2[]       = "#383838";
 static const char col_gray3[]       = "#d8d8d8";
